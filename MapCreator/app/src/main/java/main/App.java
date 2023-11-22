@@ -10,6 +10,7 @@ import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.Spinner;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -18,6 +19,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.StrokeType;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
@@ -354,7 +356,58 @@ public class App extends Application {
 	}
 
 	private static Pane gridProcess(ArrayList<TileElement> tileElements, double scale) {
-		return process(tileElements, scale);
+		Pane pane = new Pane();
+		if (tileElements.isEmpty()) {
+			return pane;
+		}
+		int rowHeight = 20, columnWidth = 20;
+		int maxX = 0, maxY = 0;
+		for (TileElement tileElement : tileElements) {
+			Rectangle r = new Rectangle(scale * TileElement.WIDTH, scale * TileElement.HEIGHT, Color.TRANSPARENT);
+			r.setStroke(Color.BLACK);
+			r.setStrokeType(StrokeType.CENTERED);
+			r.setLayoutX(columnWidth + scale * tileElement.c.x * TileElement.WIDTH);
+			r.setLayoutY(rowHeight + scale * tileElement.c.y * TileElement.HEIGHT);
+			pane.getChildren().add(r);
+			if (pane.getPrefWidth() < r.getLayoutX() + r.getWidth()) {
+				pane.setPrefWidth(r.getLayoutX() + r.getWidth());
+			}
+			if (pane.getPrefHeight() < r.getLayoutY() + r.getHeight()) {
+				pane.setPrefHeight(r.getLayoutY() + r.getHeight());
+			}
+			for (Image image : tileElement.images) {
+				ImageView imgV = new ImageView(image);
+				imgV.setLayoutX(r.getLayoutX());
+				imgV.setLayoutY(r.getLayoutY());
+				imgV.setTranslateX(0.5 * (scale - 1) * TileElement.WIDTH);
+				imgV.setTranslateY(0.5 * (scale - 1) * TileElement.HEIGHT);
+				imgV.setScaleX(scale);
+				imgV.setScaleY(scale);
+				pane.getChildren().add(0, imgV);
+			}
+			if (tileElement.c.x > maxX) {
+				maxX = tileElement.c.x;
+			}
+			if (tileElement.c.y > maxY) {
+				maxY = tileElement.c.y;
+			}
+		}
+		Label columnTop[] = new Label[maxX + 1];
+		Label rowLeft[] = new Label[maxY + 1];
+		for (int i = 0; i < columnTop.length; i++) {
+			columnTop[i] = new Label("" + i);
+			columnTop[i].setLayoutX(columnWidth + (i + 0.45) * TileElement.WIDTH);
+		}
+		for (int i = 0; i < rowLeft.length; i++) {
+			rowLeft[i] = new Label("" + i);
+			rowLeft[i].setLayoutY(rowHeight + (i + 0.45) * TileElement.HEIGHT);
+			rowLeft[i].setLayoutX(columnWidth * 0.35);
+		}
+		pane.getChildren().addAll(columnTop);
+		pane.getChildren().addAll(rowLeft);
+		pane.setPrefWidth(pane.getPrefWidth() + 10);
+		pane.setPrefHeight(pane.getPrefHeight() + 10);
+		return pane;
 	}
 
 	private static void snapshot(Pane previewPane, File file) {
