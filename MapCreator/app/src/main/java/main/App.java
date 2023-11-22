@@ -49,10 +49,12 @@ public class App extends Application {
 		spinX.setLayoutY(20);
 		spinX.setEditable(true);
 		spinX.setPrefWidth(80);
+		spinX.valueProperty().addListener(l -> displayTileStack());
 		spinY.setLayoutX(120);
 		spinY.setLayoutY(20);
 		spinY.setEditable(true);
 		spinY.setPrefWidth(80);
+		spinY.valueProperty().addListener(l -> displayTileStack());
 		open.setLayoutX(220);
 		open.setLayoutY(20);
 		open.setPrefWidth(90);
@@ -94,10 +96,13 @@ public class App extends Application {
 	private void displayTileStack() {
 		displayStack.getChildren().clear();
 		TileElement tileElement = tileList.get(new Coo((int) spinX.getValue(), (int) spinY.getValue()));
+		if (null == tileElement) {
+			return;
+		}
 		for (int i = 0; i < tileElement.images.size(); i++) {
 			ImageView imgV = new ImageView(tileElement.images.get(i));
-			imgV.setLayoutX(i * tileElement.images.get(i).getWidth());
-			imgV.setLayoutY(0.5 * (displayStack.getPrefHeight() - tileElement.images.get(i).getHeight()));
+			imgV.setLayoutX(i * (TileElement.WIDTH + 10));
+			imgV.setLayoutY(0.5 * (displayStack.getPrefHeight() - TileElement.HEIGHT));
 			displayStack.getChildren().add(imgV);
 		}
 	}
@@ -144,7 +149,6 @@ public class App extends Application {
 
 		@Override
 		public boolean equals(Object obj) {
-			System.out.println(obj.getClass());
 			return null != obj && (obj == this || (obj instanceof Coo coo && coo.x == this.x && coo.y == this.y));
 		}
 	}
