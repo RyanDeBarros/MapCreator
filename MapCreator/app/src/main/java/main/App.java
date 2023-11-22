@@ -27,7 +27,6 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.StrokeType;
 import javafx.scene.text.TextAlignment;
-import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javax.imageio.ImageIO;
@@ -39,7 +38,7 @@ public class App extends Application {
 			spinY = new Spinner<Integer>(0, Integer.MAX_VALUE, 0);
 	private final Button open = new Button("Add image");
 	private final FileChooser openImage = new FileChooser();
-	private File openAt;
+	private File openAt = null;
 	private final Pane displayStack = new Pane();
 	private final Pane displayTile = new Pane();
 	private final Button remove = new Button("Remove"), move = new Button("Move"), cancel = new Button("Cancel");
@@ -69,10 +68,6 @@ public class App extends Application {
 
 	@Override
 	public void start(Stage stage) {
-		DirectoryChooser onStart = new DirectoryChooser();
-		onStart.setTitle("Choose starting directory");
-		openAt = onStart.showDialog(stage);
-
 		stage.setOnCloseRequest(c -> {
 			Platform.exit();
 		});
@@ -104,7 +99,9 @@ public class App extends Application {
 		open.setPrefWidth(90);
 		open.setTextAlignment(TextAlignment.CENTER);
 		open.setOnAction(a -> {
-			openImage.setInitialDirectory(openAt);
+			if (null != openAt) {
+				openImage.setInitialDirectory(openAt);
+			}
 			File imageFile = openImage.showOpenDialog(stage);
 			if (null != imageFile && isPNG(imageFile)) {
 				openAt = imageFile.getParentFile();
@@ -294,6 +291,7 @@ public class App extends Application {
 
 		stage.setScene(new Scene(menu));
 		stage.setTitle("Map Creator");
+		stage.getIcons().add(new Image(getClass().getResource("/mapIcon.png").toExternalForm()));
 		stage.show();
 		displayTileStack();
 	}
