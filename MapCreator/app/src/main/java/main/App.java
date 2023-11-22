@@ -24,10 +24,14 @@ public class App extends Application {
 	private final TileList tileList = new TileList();
 	private final Spinner spinX = new Spinner<Integer>(0, Integer.MAX_VALUE, 0),
 			spinY = new Spinner<Integer>(0, Integer.MAX_VALUE, 0);
-	private final Button open = new Button();
+	private final Button open = new Button("Add image");
 	private final FileChooser openImage = new FileChooser();
 	private File openAt;
 	private Pane displayStack = new Pane();
+	private final Button remove = new Button("Remove"), move = new Button("Move"), cancel = new Button("Cancel");
+	private Spinner spinPos = new Spinner<Integer>(0, Integer.MAX_VALUE, 0);
+	private TileElement selectTile = null;
+	private int selectId = -1;
 
 	public static void main(String[] args) {
 		launch(args);
@@ -36,6 +40,7 @@ public class App extends Application {
 	@Override
 	public void start(Stage stage) {
 		DirectoryChooser onStart = new DirectoryChooser();
+		onStart.setTitle("Choose starting directory");
 		openAt = onStart.showDialog(stage);
 
 		Pane menu = new Pane();
@@ -58,7 +63,6 @@ public class App extends Application {
 		open.setLayoutX(220);
 		open.setLayoutY(20);
 		open.setPrefWidth(90);
-		open.setText("Add image");
 		open.setTextAlignment(TextAlignment.CENTER);
 		open.setOnAction(a -> {
 			openImage.setInitialDirectory(openAt);
@@ -70,9 +74,45 @@ public class App extends Application {
 			}
 		});
 		menu.getChildren().addAll(spinX, spinY, open);
+
+		remove.setLayoutX(330);
+		remove.setLayoutY(20);
+		remove.setTextAlignment(TextAlignment.CENTER);
+		remove.setPrefWidth(90);
+		spinPos.setLayoutX(440);
+		spinPos.setLayoutY(20);
+		spinPos.setPrefWidth(80);
+		move.setLayoutX(540);
+		move.setLayoutY(20);
+		move.setTextAlignment(TextAlignment.CENTER);
+		move.setPrefWidth(90);
+		cancel.setLayoutX(650);
+		cancel.setLayoutY(20);
+		cancel.setTextAlignment(TextAlignment.CENTER);
+		cancel.setPrefWidth(90);
+		remove.setOnAction(a -> {
+			selectTile.images.remove(selectId);
+			if (selectTile.images.isEmpty()) {
+				tileList.remove(selectId);
+			}
+			displayTileStack();
+		});
+		move.setOnAction(a -> {
+			int to = (int) spinPos.getValue();
+			if (to >= selectTile.images.size()) {
+				to = selectTile.images.size() - 1;
+			}
+			Image img = selectTile.images.remove(selectId);
+			selectTile.images.add(to, img);
+			displayTileStack();
+		});
+		cancel.setOnMousePressed(m -> displayTileStack());
+		menu.getChildren().addAll(remove, spinPos, move, cancel);
+
 		stage.setScene(new Scene(menu));
 		stage.setTitle("Map Creator");
 		stage.show();
+		displayTileStack();
 	}
 
 	private static boolean isPNG(File file) {
@@ -95,6 +135,12 @@ public class App extends Application {
 
 	private void displayTileStack() {
 		displayStack.getChildren().clear();
+		remove.setDisable(true);
+		spinPos.setDisable(true);
+		move.setDisable(true);
+		cancel.setDisable(true);
+		selectTile = null;
+		selectId = -1;
 		TileElement tileElement = tileList.get(new Coo((int) spinX.getValue(), (int) spinY.getValue()));
 		if (null == tileElement) {
 			return;
@@ -103,8 +149,19 @@ public class App extends Application {
 			ImageView imgV = new ImageView(tileElement.images.get(i));
 			imgV.setLayoutX(i * (TileElement.WIDTH + 10));
 			imgV.setLayoutY(0.5 * (displayStack.getPrefHeight() - TileElement.HEIGHT));
+			int j = i;
+			imgV.setOnMousePressed(m -> imageSelect(tileElement, j));
 			displayStack.getChildren().add(imgV);
 		}
+	}
+
+	private void imageSelect(TileElement tileElement, int i) {
+		selectTile = tileElement;
+		selectId = i;
+		remove.setDisable(false);
+		spinPos.setDisable(false);
+		move.setDisable(false);
+		cancel.setDisable(false);
 	}
 
 	private static Pane process(ArrayList<TileElement> tileElements) {
@@ -174,6 +231,11 @@ public class App extends Application {
 			coos.add(tileElement.c);
 			tileElements.add(tileElement);
 			return true;
+		}
+
+		public void remove(int i) {
+			coos.remove(i);
+			tileElements.remove(i);
 		}
 
 	}
