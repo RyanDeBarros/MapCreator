@@ -49,8 +49,10 @@ public class App extends Application {
 			insertTemplate = new Button("Insert template"),
 			appendTemplate = new Button("Append template");
 	private final HashMap<Integer, ArrayList<Image>> templates = new HashMap<>();
+	private final Button clearTile = new Button("Clear tile");
 	private final Button previewGridBtn = new Button("Preview grid");
 	private final Spinner spinPreviewScale = new Spinner<Double>(0, Double.MAX_VALUE, 1);
+	private double previewScale = 1;
 
 	public static void main(String[] args) {
 		launch(args);
@@ -154,22 +156,15 @@ public class App extends Application {
 		previewBtn.setTextAlignment(TextAlignment.CENTER);
 		previewBtn.setPrefWidth(80);
 		previewBtn.setOnAction(a -> {
-			Pane preview = process(tileList.tileElements);
-			if (!preview.getChildren().isEmpty()) {
-				Stage previewStage = new Stage();
-				previewStage.setScene(new Scene(preview));
-				previewStage.setTitle("Preview #" + previewCount++);
-				previews.add(previewStage);
-				previewStage.setOnCloseRequest(c -> previews.remove(previewStage));
-				previewStage.show();
-			}
+			Pane preview = process(tileList.tileElements, previewScale);
+			displayPreview(preview);
 		});
 		save.setLayoutX(previewBtn.getLayoutX() + previewBtn.getPrefWidth() + padding);
 		save.setLayoutY(20);
 		save.setTextAlignment(TextAlignment.CENTER);
 		save.setPrefWidth(70);
 		save.setOnAction(a -> {
-			Pane preview = process(tileList.tileElements);
+			Pane preview = process(tileList.tileElements, 1);
 			if (!preview.getChildren().isEmpty()) {
 				FileChooser saveAs = new FileChooser();
 				saveAs.getExtensionFilters().add(new FileChooser.ExtensionFilter("Image", "*.png"));
@@ -190,6 +185,7 @@ public class App extends Application {
 		spinTemplate.setLayoutX(padding);
 		spinTemplate.setLayoutY(60);
 		spinTemplate.setPrefWidth(80);
+		spinTemplate.setEditable(true);
 		spinTemplate.valueProperty().addListener(l -> {
 			templateId = (int) spinTemplate.getValue();
 		});
@@ -213,15 +209,7 @@ public class App extends Application {
 		});
 		insertTemplate.setOnAction(a -> {
 			if (templates.containsKey(templateId)) {
-				Coo coo = new Coo((int) spinX.getValue(), (int) spinY.getValue());
-				TileElement tile;
-				if (tileList.coos.contains(coo)) {
-					tile = tileList.get(coo);
-				} else {
-					tile = new TileElement();
-					tile.c = coo;
-					tileList.add(tile);
-				}
+				TileElement tile = getOrCreateCurrentTileElement();
 				tile.images.clear();
 				tile.images.addAll(templates.get(templateId));
 				displayTileStack();
@@ -229,25 +217,59 @@ public class App extends Application {
 		});
 		appendTemplate.setOnAction(a -> {
 			if (templates.containsKey(templateId)) {
-				Coo coo = new Coo((int) spinX.getValue(), (int) spinY.getValue());
-				TileElement tile;
-				if (tileList.coos.contains(coo)) {
-					tile = tileList.get(coo);
-				} else {
-					tile = new TileElement();
-					tile.c = coo;
-					tileList.add(tile);
-				}
-				tile.images.addAll(templates.get(templateId));
+				getOrCreateCurrentTileElement().images.addAll(templates.get(templateId));
 				displayTileStack();
 			}
 		});
 		menu.getChildren().addAll(spinTemplate, setTemplate, insertTemplate, appendTemplate);
 
+		clearTile.setLayoutX(appendTemplate.getLayoutX() + appendTemplate.getPrefWidth() + padding);
+		clearTile.setLayoutY(appendTemplate.getLayoutY());
+		clearTile.setPrefWidth(80);
+		clearTile.setTextAlignment(TextAlignment.CENTER);
+		previewGridBtn.setLayoutX(clearTile.getLayoutX() + clearTile.getPrefWidth() + padding);
+		previewGridBtn.setLayoutY(clearTile.getLayoutY());
+		previewGridBtn.setPrefWidth(90);
+		previewGridBtn.setTextAlignment(TextAlignment.CENTER);
+		spinPreviewScale.setLayoutX(previewGridBtn.getLayoutX() + previewGridBtn.getPrefWidth() + padding);
+		spinPreviewScale.setLayoutY(previewGridBtn.getLayoutY());
+		spinPreviewScale.setPrefWidth(80);
+		spinPreviewScale.setEditable(true);
+		clearTile.setOnAction(a -> {
+			Coo coo = new Coo((int) spinX.getValue(), (int) spinY.getValue());
+			if (tileList.coos.contains(coo)) {
+				TileElement tile = tileList.get(coo);
+				tile.images.clear();
+				tileList.remove(tileList.coos.indexOf(coo));
+				displayTileStack();
+			}
+		});
+		previewGridBtn.setOnAction(a -> {
+			Pane preview = gridProcess(tileList.tileElements, previewScale);
+			displayPreview(preview);
+		});
+		spinPreviewScale.valueProperty().addListener(l -> {
+			previewScale = (double) spinPreviewScale.getValue();
+		});
+		menu.getChildren().addAll(clearTile, previewGridBtn, spinPreviewScale);
+
 		stage.setScene(new Scene(menu));
 		stage.setTitle("Map Creator");
 		stage.show();
 		displayTileStack();
+	}
+
+	private TileElement getOrCreateCurrentTileElement() {
+		Coo coo = new Coo((int) spinX.getValue(), (int) spinY.getValue());
+		TileElement tile;
+		if (tileList.coos.contains(coo)) {
+			tile = tileList.get(coo);
+		} else {
+			tile = new TileElement();
+			tile.c = coo;
+			tileList.add(tile);
+		}
+		return tile;
 	}
 
 	private static boolean isPNG(File file) {
@@ -308,17 +330,31 @@ public class App extends Application {
 		cancel.setDisable(false);
 	}
 
-	private static Pane process(ArrayList<TileElement> tileElements) {
+	private static Pane process(ArrayList<TileElement> tileElements, double scale) {
 		Pane pane = new Pane();
 		for (TileElement tileElement : tileElements) {
 			for (Image image : tileElement.images) {
 				ImageView imgV = new ImageView(image);
-				imgV.setLayoutX(tileElement.c.x * TileElement.WIDTH);
-				imgV.setLayoutY(tileElement.c.y * TileElement.HEIGHT);
+				imgV.setLayoutX(scale * tileElement.c.x * TileElement.WIDTH);
+				imgV.setLayoutY(scale * tileElement.c.y * TileElement.HEIGHT);
+				imgV.setTranslateX(0.5 * (scale - 1) * TileElement.WIDTH);
+				imgV.setTranslateY(0.5 * (scale - 1) * TileElement.HEIGHT);
+				imgV.setScaleX(scale);
+				imgV.setScaleY(scale);
 				pane.getChildren().add(imgV);
+				if (pane.getPrefWidth() < imgV.getLayoutX() + scale * TileElement.WIDTH) {
+					pane.setPrefWidth(imgV.getLayoutX() + scale * TileElement.WIDTH);
+				}
+				if (pane.getPrefHeight() < imgV.getLayoutY() + scale * TileElement.HEIGHT) {
+					pane.setPrefHeight(imgV.getLayoutY() + scale * TileElement.HEIGHT);
+				}
 			}
 		}
 		return pane;
+	}
+
+	private static Pane gridProcess(ArrayList<TileElement> tileElements, double scale) {
+		return process(tileElements, scale);
 	}
 
 	private static void snapshot(Pane previewPane, File file) {
@@ -327,6 +363,19 @@ public class App extends Application {
 			ImageIO.write(SwingFXUtils.fromFXImage(img, null), "png", file);
 		} catch (IOException e) {
 			e.printStackTrace();
+		}
+	}
+
+	private void displayPreview(Pane preview) {
+		if (!preview.getChildren().isEmpty()) {
+			Stage previewStage = new Stage();
+			Pane root = new Pane();
+			root.getChildren().add(preview);
+			previewStage.setScene(new Scene(root));
+			previewStage.setTitle("Preview #" + previewCount++);
+			previews.add(previewStage);
+			previewStage.setOnCloseRequest(c -> previews.remove(previewStage));
+			previewStage.show();
 		}
 	}
 
