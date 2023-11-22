@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -37,6 +38,9 @@ public class App extends Application {
 	private TileElement selectTile = null;
 	private int selectId = -1;
 	private Button toggleGreyBkg = new Button("Toggle grey BKG");
+	private Button previewBtn = new Button("Preview");
+	private static int previewCount = 1;
+	private final ArrayList<Stage> previews = new ArrayList<>();
 
 	public static void main(String[] args) {
 		launch(args);
@@ -48,6 +52,9 @@ public class App extends Application {
 		onStart.setTitle("Choose starting directory");
 		openAt = onStart.showDialog(stage);
 
+		stage.setOnCloseRequest(c -> {
+			Platform.exit();
+		});
 		Pane menu = new Pane();
 		menu.setPrefSize(1310, 450);
 		displayStack.setPrefSize(1100, 300);
@@ -59,17 +66,19 @@ public class App extends Application {
 		displayTile.setLayoutY(100);
 		menu.getChildren().addAll(displayStack, li, displayTile);
 
-		spinX.setLayoutX(20);
+		int padding = 20;
+
+		spinX.setLayoutX(padding);
 		spinX.setLayoutY(20);
 		spinX.setEditable(true);
 		spinX.setPrefWidth(80);
 		spinX.valueProperty().addListener(l -> displayTileStack());
-		spinY.setLayoutX(120);
+		spinY.setLayoutX(spinX.getLayoutX() + spinX.getPrefWidth() + padding);
 		spinY.setLayoutY(20);
 		spinY.setEditable(true);
 		spinY.setPrefWidth(80);
 		spinY.valueProperty().addListener(l -> displayTileStack());
-		open.setLayoutX(220);
+		open.setLayoutX(spinY.getLayoutX() + spinY.getPrefWidth() + padding);
 		open.setLayoutY(20);
 		open.setPrefWidth(90);
 		open.setTextAlignment(TextAlignment.CENTER);
@@ -84,18 +93,18 @@ public class App extends Application {
 		});
 		menu.getChildren().addAll(spinX, spinY, open);
 
-		remove.setLayoutX(330);
+		remove.setLayoutX(open.getLayoutX() + open.getPrefWidth() + padding);
 		remove.setLayoutY(20);
 		remove.setTextAlignment(TextAlignment.CENTER);
 		remove.setPrefWidth(90);
-		spinPos.setLayoutX(440);
+		spinPos.setLayoutX(remove.getLayoutX() + remove.getPrefWidth() + padding);
 		spinPos.setLayoutY(20);
 		spinPos.setPrefWidth(80);
-		move.setLayoutX(540);
+		move.setLayoutX(spinPos.getLayoutX() + spinPos.getPrefWidth() + padding);
 		move.setLayoutY(20);
 		move.setTextAlignment(TextAlignment.CENTER);
 		move.setPrefWidth(90);
-		cancel.setLayoutX(650);
+		cancel.setLayoutX(move.getLayoutX() + move.getPrefWidth() + padding);
 		cancel.setLayoutY(20);
 		cancel.setTextAlignment(TextAlignment.CENTER);
 		cancel.setPrefWidth(90);
@@ -118,7 +127,7 @@ public class App extends Application {
 		cancel.setOnMousePressed(m -> displayTileStack());
 		menu.getChildren().addAll(remove, spinPos, move, cancel);
 
-		toggleGreyBkg.setLayoutX(760);
+		toggleGreyBkg.setLayoutX(cancel.getLayoutX() + cancel.getPrefWidth() + padding);
 		toggleGreyBkg.setLayoutY(20);
 		toggleGreyBkg.setTextAlignment(TextAlignment.CENTER);
 		toggleGreyBkg.setPrefWidth(120);
@@ -129,6 +138,23 @@ public class App extends Application {
 		toggleGreyBkg.setOnAction(a -> greyBkg.setOpacity(1 - greyBkg.getOpacity()));
 		menu.getChildren().add(toggleGreyBkg);
 		menu.getChildren().add(0, greyBkg);
+
+		previewBtn.setLayoutX(toggleGreyBkg.getLayoutX() + toggleGreyBkg.getPrefWidth() + padding);
+		previewBtn.setLayoutY(20);
+		previewBtn.setTextAlignment(TextAlignment.CENTER);
+		previewBtn.setPrefWidth(80);
+		previewBtn.setOnAction(a -> {
+			Pane preview = process(tileList.tileElements);
+			if (!preview.getChildren().isEmpty()) {
+				Stage previewStage = new Stage();
+				previewStage.setScene(new Scene(preview));
+				previewStage.setTitle("Preview #" + previewCount++);
+				previews.add(previewStage);
+				previewStage.setOnCloseRequest(c -> previews.remove(previewStage));
+				previewStage.show();
+			}
+		});
+		menu.getChildren().add(previewBtn);
 
 		stage.setScene(new Scene(menu));
 		stage.setTitle("Map Creator");
@@ -155,6 +181,9 @@ public class App extends Application {
 	}
 
 	private void displayTileStack() {
+		displayStack.getChildren().clear();
+		displayTile.getChildren().clear();
+
 		remove.setDisable(true);
 		spinPos.setDisable(true);
 		move.setDisable(true);
@@ -166,7 +195,6 @@ public class App extends Application {
 			return;
 		}
 
-		displayStack.getChildren().clear();
 		for (int i = 0; i < tileElement.images.size(); i++) {
 			ImageView imgV = new ImageView(tileElement.images.get(i));
 			imgV.setLayoutX(i * (TileElement.WIDTH + 10));
@@ -175,8 +203,6 @@ public class App extends Application {
 			imgV.setOnMousePressed(m -> imageSelect(tileElement, j));
 			displayStack.getChildren().add(imgV);
 		}
-
-		displayTile.getChildren().clear();
 		for (int i = 0; i < tileElement.images.size(); i++) {
 			ImageView imgV = new ImageView(tileElement.images.get(i));
 			imgV.setLayoutX(0.5 * (displayTile.getPrefWidth() - TileElement.WIDTH));
