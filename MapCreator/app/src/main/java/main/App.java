@@ -250,11 +250,6 @@ public class App extends Application {
 				imgV.setLayoutX(tileElement.c.x * TileElement.WIDTH);
 				imgV.setLayoutY(tileElement.c.y * TileElement.HEIGHT);
 				pane.getChildren().add(imgV);
-//				if (pane.getPrefWidth() < imgV.getLayoutX() + TileElement.WIDTH) {
-//					pane.setPrefWidth(imgV.getLayoutX() + TileElement.WIDTH);
-//				}
-//				if (pane.getPrefHeight() < imgV.getLayoutY() + TileElement.HEIGHT) {
-//					pane.setPrefHeight(imgV.getLayoutY() + TileElement.HEIGHT);
 //				}
 			}
 		}
@@ -262,9 +257,6 @@ public class App extends Application {
 	}
 
 	private static void snapshot(Pane previewPane, File file) {
-//		SnapshotParameters snapshot = new SnapshotParameters();
-//		snapshot.setViewport(new javafx.geometry.Rectangle2D(0, 0, previewPane.getPrefWidth(), previewPane.getPrefHeight()));
-//		WritableImage img = previewPane.snapshot(snapshot, null);
 		WritableImage img = previewPane.snapshot(null, null);
 		try {
 			ImageIO.write(SwingFXUtils.fromFXImage(img, null), "png", file);
@@ -286,6 +278,14 @@ public class App extends Application {
 		public boolean equals(Object obj) {
 			return null != obj && (obj == this || (obj instanceof Coo coo && coo.x == this.x && coo.y == this.y));
 		}
+	}
+
+	public class TileElement {
+
+		public final ArrayList<Image> images = new ArrayList<>();
+		public Coo c;
+		public static final int WIDTH = 64, HEIGHT = 64;
+
 	}
 
 	public static class TileList {
