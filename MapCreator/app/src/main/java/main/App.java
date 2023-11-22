@@ -1,8 +1,13 @@
 package main;
 
 import com.google.common.io.Files;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,7 +34,7 @@ import javax.imageio.ImageIO;
 
 public class App extends Application {
 
-	private final TileList tileList = new TileList();
+	private TileList tileList = new TileList();
 	private final Spinner spinX = new Spinner<Integer>(0, Integer.MAX_VALUE, 0),
 			spinY = new Spinner<Integer>(0, Integer.MAX_VALUE, 0);
 	private final Button open = new Button("Add image");
@@ -45,7 +50,7 @@ public class App extends Application {
 	private final Button previewBtn = new Button("Preview");
 	private static int previewCount = 1;
 	private final ArrayList<Stage> previews = new ArrayList<>();
-	private final Button save = new Button("Save");
+	private final Button export = new Button("Export");
 	private final Spinner spinTemplate = new Spinner<Integer>(0, Integer.MAX_VALUE, 0);
 	private int templateId = 0;
 	private final Button setTemplate = new Button("Set template"),
@@ -56,6 +61,7 @@ public class App extends Application {
 	private final Button previewGridBtn = new Button("Preview grid");
 	private final Spinner spinPreviewScale = new Spinner<Double>(0, Double.MAX_VALUE, 1);
 	private double previewScale = 1;
+	private final Button loadSession = new Button("Load session"), saveSession = new Button("Save session");
 
 	public static void main(String[] args) {
 		launch(args);
@@ -162,16 +168,17 @@ public class App extends Application {
 			Pane preview = process(tileList.tileElements, previewScale);
 			displayPreview(preview);
 		});
-		save.setLayoutX(previewBtn.getLayoutX() + previewBtn.getPrefWidth() + padding);
-		save.setLayoutY(20);
-		save.setTextAlignment(TextAlignment.CENTER);
-		save.setPrefWidth(70);
-		save.setOnAction(a -> {
+		export.setLayoutX(previewBtn.getLayoutX() + previewBtn.getPrefWidth() + padding);
+		export.setLayoutY(20);
+		export.setTextAlignment(TextAlignment.CENTER);
+		export.setPrefWidth(70);
+		export.setOnAction(a -> {
 			Pane preview = process(tileList.tileElements, 1);
 			if (!preview.getChildren().isEmpty()) {
-				FileChooser saveAs = new FileChooser();
-				saveAs.getExtensionFilters().add(new FileChooser.ExtensionFilter("Image", "*.png"));
-				File saveFile = saveAs.showSaveDialog(stage);
+				FileChooser exportAs = new FileChooser();
+				exportAs.setTitle("Export image");
+				exportAs.getExtensionFilters().add(new FileChooser.ExtensionFilter("Image", "*.png"));
+				File saveFile = exportAs.showSaveDialog(stage);
 				if (null != saveFile) {
 					try {
 						if (saveFile.createNewFile()) {
@@ -183,7 +190,7 @@ public class App extends Application {
 				}
 			}
 		});
-		menu.getChildren().addAll(previewBtn, save);
+		menu.getChildren().addAll(previewBtn, export);
 
 		spinTemplate.setLayoutX(padding);
 		spinTemplate.setLayoutY(60);
@@ -255,6 +262,35 @@ public class App extends Application {
 			previewScale = (double) spinPreviewScale.getValue();
 		});
 		menu.getChildren().addAll(clearTile, previewGridBtn, spinPreviewScale);
+
+		loadSession.setLayoutX(spinPreviewScale.getLayoutX() + spinPreviewScale.getPrefWidth() + padding);
+		loadSession.setLayoutY(spinPreviewScale.getLayoutY());
+		loadSession.setTextAlignment(TextAlignment.CENTER);
+		loadSession.setPrefWidth(100);
+		saveSession.setLayoutX(loadSession.getLayoutX() + loadSession.getPrefWidth() + padding);
+		saveSession.setLayoutY(loadSession.getLayoutY());
+		saveSession.setTextAlignment(TextAlignment.CENTER);
+		saveSession.setPrefWidth(100);
+		loadSession.setOnAction(a -> {
+			FileChooser load = new FileChooser();
+			load.setTitle("Load session (.ser file)");
+			File loadFile = load.showOpenDialog(stage);
+			if (null != loadFile) {
+				TileList loadList = Loader.load(loadFile);
+				tileList = loadList;
+				displayTileStack();
+			}
+		});
+		saveSession.setOnAction(a -> {
+			FileChooser save = new FileChooser();
+			save.setTitle("Save session");
+			save.getExtensionFilters().add(new FileChooser.ExtensionFilter("Serialized data file", "*.ser"));
+			File saveFile = save.showSaveDialog(stage);
+			if (null != saveFile) {
+				Loader.save(tileList, saveFile);
+			}
+		});
+		menu.getChildren().addAll(loadSession, saveSession);
 
 		stage.setScene(new Scene(menu));
 		stage.setTitle("Map Creator");
@@ -433,7 +469,7 @@ public class App extends Application {
 		}
 	}
 
-	public static class Coo {
+	public static class Coo implements Serializable {
 
 		public final int x, y;
 
@@ -446,13 +482,52 @@ public class App extends Application {
 		public boolean equals(Object obj) {
 			return null != obj && (obj == this || (obj instanceof Coo coo && coo.x == this.x && coo.y == this.y));
 		}
+
 	}
 
-	public class TileElement {
+	public static class TileElement implements Serializable {
 
-		public ArrayList<Image> images = new ArrayList<>();
+		public transient ArrayList<Image> images = new ArrayList<>();
 		public Coo c;
 		public static final int WIDTH = 64, HEIGHT = 64;
+
+		private void writeObject(ObjectOutputStream out) throws IOException {
+			out.defaultWriteObject();
+
+			int size = images.size();
+			out.writeInt(size);
+			for (Image image : images) {
+				byte[] imageData = serializeImage(image);
+				out.writeInt(imageData.length);
+				out.write(imageData);
+			}
+		}
+
+		private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+			in.defaultReadObject();
+
+			int size = in.readInt();
+			images = new ArrayList<>(size);
+			for (int i = 0; i < size; i++) {
+				int length = in.readInt();
+				byte[] imageData = new byte[length];
+				in.readFully(imageData);
+				Image image = deserializeImage(imageData);
+				images.add(image);
+			}
+		}
+
+		private byte[] serializeImage(Image image) throws IOException {
+			BufferedImage bufferedImage = SwingFXUtils.fromFXImage(image, null);
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			ImageIO.write(bufferedImage, "png", baos);
+			return baos.toByteArray();
+		}
+
+		private Image deserializeImage(byte[] imageData) throws IOException {
+			ByteArrayInputStream bais = new ByteArrayInputStream(imageData);
+			return new Image(bais);
+		}
 
 	}
 
