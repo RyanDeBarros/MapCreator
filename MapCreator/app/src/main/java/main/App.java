@@ -3,6 +3,7 @@ package main;
 import com.google.common.io.Files;
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import javafx.application.Application;
@@ -455,7 +456,7 @@ public class App extends Application {
 
 	}
 
-	public static class TileList {
+	public static class TileList implements Serializable {
 
 		private final ArrayList<Coo> coos = new ArrayList<>();
 		private final ArrayList<TileElement> tileElements = new ArrayList<>();
