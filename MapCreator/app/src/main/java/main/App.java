@@ -31,16 +31,17 @@ public class App extends Application {
 	private final Button open = new Button("Add image");
 	private final FileChooser openImage = new FileChooser();
 	private File openAt;
-	private Pane displayStack = new Pane();
-	private Pane displayTile = new Pane();
+	private final Pane displayStack = new Pane();
+	private final Pane displayTile = new Pane();
 	private final Button remove = new Button("Remove"), move = new Button("Move"), cancel = new Button("Cancel");
-	private Spinner spinPos = new Spinner<Integer>(0, Integer.MAX_VALUE, 0);
+	private final Spinner spinPos = new Spinner<Integer>(0, Integer.MAX_VALUE, 0);
 	private TileElement selectTile = null;
 	private int selectId = -1;
-	private Button toggleGreyBkg = new Button("Toggle grey BKG");
-	private Button previewBtn = new Button("Preview");
+	private final Button toggleGreyBkg = new Button("Toggle grey BKG");
+	private final Button previewBtn = new Button("Preview");
 	private static int previewCount = 1;
 	private final ArrayList<Stage> previews = new ArrayList<>();
+	private final Button save = new Button("Save");
 
 	public static void main(String[] args) {
 		launch(args);
@@ -154,7 +155,28 @@ public class App extends Application {
 				previewStage.show();
 			}
 		});
-		menu.getChildren().add(previewBtn);
+		save.setLayoutX(previewBtn.getLayoutX() + previewBtn.getPrefWidth() + padding);
+		save.setLayoutY(20);
+		save.setTextAlignment(TextAlignment.CENTER);
+		save.setPrefWidth(70);
+		save.setOnAction(a -> {
+			Pane preview = process(tileList.tileElements);
+			if (!preview.getChildren().isEmpty()) {
+				FileChooser saveAs = new FileChooser();
+				saveAs.getExtensionFilters().add(new FileChooser.ExtensionFilter("Image", "*.png"));
+				File saveFile = saveAs.showSaveDialog(stage);
+				if (null != saveFile) {
+					try {
+						if (saveFile.createNewFile()) {
+							snapshot(preview, saveFile);
+						}
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+		});
+		menu.getChildren().addAll(previewBtn, save);
 
 		stage.setScene(new Scene(menu));
 		stage.setTitle("Map Creator");
@@ -268,8 +290,8 @@ public class App extends Application {
 
 	public static class TileList {
 
-		private ArrayList<Coo> coos = new ArrayList<>();
-		private ArrayList<TileElement> tileElements = new ArrayList<>();
+		private final ArrayList<Coo> coos = new ArrayList<>();
+		private final ArrayList<TileElement> tileElements = new ArrayList<>();
 
 		public TileElement get(Coo coo) {
 			for (int i = 0; i < coos.size(); i++) {
