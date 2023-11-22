@@ -4,6 +4,7 @@ import com.google.common.io.Files;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
@@ -42,6 +43,14 @@ public class App extends Application {
 	private static int previewCount = 1;
 	private final ArrayList<Stage> previews = new ArrayList<>();
 	private final Button save = new Button("Save");
+	private final Spinner spinTemplate = new Spinner<Integer>(0, Integer.MAX_VALUE, 0);
+	private int templateId = 0;
+	private final Button setTemplate = new Button("Set template"),
+			insertTemplate = new Button("Insert template"),
+			appendTemplate = new Button("Append template");
+	private final HashMap<Integer, ArrayList<Image>> templates = new HashMap<>();
+	private final Button previewGridBtn = new Button("Preview grid");
+	private final Spinner spinPreviewScale = new Spinner<Double>(0, Double.MAX_VALUE, 1);
 
 	public static void main(String[] args) {
 		launch(args);
@@ -60,11 +69,11 @@ public class App extends Application {
 		menu.setPrefSize(1310, 450);
 		displayStack.setPrefSize(1100, 300);
 		displayStack.setLayoutX(190);
-		displayStack.setLayoutY(100);
+		displayStack.setLayoutY(120);
 		Line li = new Line(170, 100, 170, 400);
 		displayTile.setPrefSize(100, 300);
 		displayTile.setLayoutX(50);
-		displayTile.setLayoutY(100);
+		displayTile.setLayoutY(120);
 		menu.getChildren().addAll(displayStack, li, displayTile);
 
 		int padding = 20;
@@ -178,6 +187,63 @@ public class App extends Application {
 		});
 		menu.getChildren().addAll(previewBtn, save);
 
+		spinTemplate.setLayoutX(padding);
+		spinTemplate.setLayoutY(60);
+		spinTemplate.setPrefWidth(80);
+		spinTemplate.valueProperty().addListener(l -> {
+			templateId = (int) spinTemplate.getValue();
+		});
+		setTemplate.setLayoutX(spinTemplate.getLayoutX() + spinTemplate.getPrefWidth() + padding);
+		setTemplate.setLayoutY(spinTemplate.getLayoutY());
+		setTemplate.setPrefWidth(90);
+		setTemplate.setTextAlignment(TextAlignment.CENTER);
+		insertTemplate.setLayoutX(setTemplate.getLayoutX() + setTemplate.getPrefWidth() + padding);
+		insertTemplate.setLayoutY(setTemplate.getLayoutY());
+		insertTemplate.setPrefWidth(100);
+		insertTemplate.setTextAlignment(TextAlignment.CENTER);
+		appendTemplate.setLayoutX(insertTemplate.getLayoutX() + insertTemplate.getPrefWidth() + padding);
+		appendTemplate.setLayoutY(insertTemplate.getLayoutY());
+		appendTemplate.setPrefWidth(110);
+		appendTemplate.setTextAlignment(TextAlignment.CENTER);
+		setTemplate.setOnAction(a -> {
+			Coo coo = new Coo((int) spinX.getValue(), (int) spinY.getValue());
+			if (tileList.coos.contains(coo)) {
+				templates.put(templateId, tileList.get(coo).images);
+			}
+		});
+		insertTemplate.setOnAction(a -> {
+			if (templates.containsKey(templateId)) {
+				Coo coo = new Coo((int) spinX.getValue(), (int) spinY.getValue());
+				TileElement tile;
+				if (tileList.coos.contains(coo)) {
+					tile = tileList.get(coo);
+				} else {
+					tile = new TileElement();
+					tile.c = coo;
+					tileList.add(tile);
+				}
+				tile.images.clear();
+				tile.images.addAll(templates.get(templateId));
+				displayTileStack();
+			}
+		});
+		appendTemplate.setOnAction(a -> {
+			if (templates.containsKey(templateId)) {
+				Coo coo = new Coo((int) spinX.getValue(), (int) spinY.getValue());
+				TileElement tile;
+				if (tileList.coos.contains(coo)) {
+					tile = tileList.get(coo);
+				} else {
+					tile = new TileElement();
+					tile.c = coo;
+					tileList.add(tile);
+				}
+				tile.images.addAll(templates.get(templateId));
+				displayTileStack();
+			}
+		});
+		menu.getChildren().addAll(spinTemplate, setTemplate, insertTemplate, appendTemplate);
+
 		stage.setScene(new Scene(menu));
 		stage.setTitle("Map Creator");
 		stage.show();
@@ -250,7 +316,6 @@ public class App extends Application {
 				imgV.setLayoutX(tileElement.c.x * TileElement.WIDTH);
 				imgV.setLayoutY(tileElement.c.y * TileElement.HEIGHT);
 				pane.getChildren().add(imgV);
-//				}
 			}
 		}
 		return pane;
@@ -282,7 +347,7 @@ public class App extends Application {
 
 	public class TileElement {
 
-		public final ArrayList<Image> images = new ArrayList<>();
+		public ArrayList<Image> images = new ArrayList<>();
 		public Coo c;
 		public static final int WIDTH = 64, HEIGHT = 64;
 
