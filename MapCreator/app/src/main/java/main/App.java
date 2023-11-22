@@ -206,7 +206,7 @@ public class App extends Application {
 		setTemplate.setOnAction(a -> {
 			Coo coo = new Coo((int) spinX.getValue(), (int) spinY.getValue());
 			if (tileList.coos.contains(coo)) {
-				templates.put(templateId, tileList.get(coo).images);
+				templates.put(templateId, new ArrayList(tileList.get(coo).images));
 			}
 		});
 		insertTemplate.setOnAction(a -> {
