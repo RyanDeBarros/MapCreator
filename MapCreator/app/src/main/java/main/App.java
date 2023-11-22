@@ -13,6 +13,9 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Line;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
@@ -28,10 +31,12 @@ public class App extends Application {
 	private final FileChooser openImage = new FileChooser();
 	private File openAt;
 	private Pane displayStack = new Pane();
+	private Pane displayTile = new Pane();
 	private final Button remove = new Button("Remove"), move = new Button("Move"), cancel = new Button("Cancel");
 	private Spinner spinPos = new Spinner<Integer>(0, Integer.MAX_VALUE, 0);
 	private TileElement selectTile = null;
 	private int selectId = -1;
+	private Button toggleGreyBkg = new Button("Toggle grey BKG");
 
 	public static void main(String[] args) {
 		launch(args);
@@ -44,11 +49,15 @@ public class App extends Application {
 		openAt = onStart.showDialog(stage);
 
 		Pane menu = new Pane();
-		menu.setPrefSize(1200, 450);
+		menu.setPrefSize(1310, 450);
 		displayStack.setPrefSize(1100, 300);
-		displayStack.setLayoutX(50);
+		displayStack.setLayoutX(190);
 		displayStack.setLayoutY(100);
-		menu.getChildren().add(displayStack);
+		Line li = new Line(170, 100, 170, 400);
+		displayTile.setPrefSize(100, 300);
+		displayTile.setLayoutX(50);
+		displayTile.setLayoutY(100);
+		menu.getChildren().addAll(displayStack, li, displayTile);
 
 		spinX.setLayoutX(20);
 		spinX.setLayoutY(20);
@@ -109,6 +118,18 @@ public class App extends Application {
 		cancel.setOnMousePressed(m -> displayTileStack());
 		menu.getChildren().addAll(remove, spinPos, move, cancel);
 
+		toggleGreyBkg.setLayoutX(760);
+		toggleGreyBkg.setLayoutY(20);
+		toggleGreyBkg.setTextAlignment(TextAlignment.CENTER);
+		toggleGreyBkg.setPrefWidth(120);
+		Rectangle greyBkg = new Rectangle(displayStack.getPrefWidth(), displayStack.getPrefHeight(), Color.LIGHTGREY);
+		greyBkg.setLayoutX(displayStack.getLayoutX());
+		greyBkg.setLayoutY(displayStack.getLayoutY());
+		greyBkg.setOpacity(0);
+		toggleGreyBkg.setOnAction(a -> greyBkg.setOpacity(1 - greyBkg.getOpacity()));
+		menu.getChildren().add(toggleGreyBkg);
+		menu.getChildren().add(0, greyBkg);
+
 		stage.setScene(new Scene(menu));
 		stage.setTitle("Map Creator");
 		stage.show();
@@ -134,7 +155,6 @@ public class App extends Application {
 	}
 
 	private void displayTileStack() {
-		displayStack.getChildren().clear();
 		remove.setDisable(true);
 		spinPos.setDisable(true);
 		move.setDisable(true);
@@ -145,6 +165,8 @@ public class App extends Application {
 		if (null == tileElement) {
 			return;
 		}
+
+		displayStack.getChildren().clear();
 		for (int i = 0; i < tileElement.images.size(); i++) {
 			ImageView imgV = new ImageView(tileElement.images.get(i));
 			imgV.setLayoutX(i * (TileElement.WIDTH + 10));
@@ -152,6 +174,14 @@ public class App extends Application {
 			int j = i;
 			imgV.setOnMousePressed(m -> imageSelect(tileElement, j));
 			displayStack.getChildren().add(imgV);
+		}
+
+		displayTile.getChildren().clear();
+		for (int i = 0; i < tileElement.images.size(); i++) {
+			ImageView imgV = new ImageView(tileElement.images.get(i));
+			imgV.setLayoutX(0.5 * (displayTile.getPrefWidth() - TileElement.WIDTH));
+			imgV.setLayoutY(0.5 * (displayTile.getPrefHeight() - TileElement.HEIGHT));
+			displayTile.getChildren().add(imgV);
 		}
 	}
 
