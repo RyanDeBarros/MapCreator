@@ -14,6 +14,7 @@ import java.util.HashMap;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -34,8 +35,8 @@ import javax.imageio.ImageIO;
 public class App extends Application {
 
 	private TileList tileList = new TileList();
-	private final Spinner spinX = new Spinner<Integer>(0, Integer.MAX_VALUE, 0),
-			spinY = new Spinner<Integer>(0, Integer.MAX_VALUE, 0);
+	private final Spinner spinX = new Spinner<Integer>(Integer.MIN_VALUE, Integer.MAX_VALUE, 0),
+			spinY = new Spinner<Integer>(Integer.MIN_VALUE, Integer.MAX_VALUE, 0);
 	private final Button open = new Button("Add image");
 	private final FileChooser openImage = new FileChooser();
 	private File openAt = null;
@@ -99,12 +100,12 @@ public class App extends Application {
 		open.setPrefWidth(90);
 		open.setTextAlignment(TextAlignment.CENTER);
 		open.setOnAction(a -> {
-			if (null != openAt) {
-				openImage.setInitialDirectory(openAt);
+			if (null != openAt && null != openAt.getParentFile()) {
+				openImage.setInitialDirectory(openAt.getParentFile());
 			}
 			File imageFile = openImage.showOpenDialog(stage);
 			if (null != imageFile && isPNG(imageFile)) {
-				openAt = imageFile.getParentFile();
+				openAt = imageFile;
 				Image image = new Image(imageFile.getAbsolutePath());
 				addImage(image, (int) spinX.getValue(), (int) spinY.getValue());
 			}
@@ -369,24 +370,37 @@ public class App extends Application {
 
 	private static Pane process(ArrayList<TileElement> tileElements, double scale) {
 		Pane pane = new Pane();
+		double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE;
+		double maxX = Double.MIN_VALUE, maxY = Double.MIN_VALUE;
 		for (TileElement tileElement : tileElements) {
+			double x = scale * tileElement.c.x * TileElement.WIDTH;
+			double y = scale * tileElement.c.y * TileElement.HEIGHT;
+			if (x < minX) {
+				minX = x;
+			}
+			if (y < minY) {
+				minY = y;
+			}
+			if (maxX < x + scale * TileElement.WIDTH) {
+				maxX = x + scale * TileElement.WIDTH;
+			}
+			if (maxY < y + scale * TileElement.HEIGHT) {
+				maxY = y + scale * TileElement.HEIGHT;
+			}
 			for (Image image : tileElement.images) {
 				ImageView imgV = new ImageView(image);
-				imgV.setLayoutX(scale * tileElement.c.x * TileElement.WIDTH);
-				imgV.setLayoutY(scale * tileElement.c.y * TileElement.HEIGHT);
-				imgV.setTranslateX(0.5 * (scale - 1) * TileElement.WIDTH);
-				imgV.setTranslateY(0.5 * (scale - 1) * TileElement.HEIGHT);
-				imgV.setScaleX(scale);
-				imgV.setScaleY(scale);
+				imgV.setLayoutX(x);
+				imgV.setLayoutY(y);
+				imgV.setFitWidth(scale * TileElement.WIDTH);
+				imgV.setFitHeight(scale * TileElement.HEIGHT);
 				pane.getChildren().add(imgV);
-				if (pane.getPrefWidth() < imgV.getLayoutX() + scale * TileElement.WIDTH) {
-					pane.setPrefWidth(imgV.getLayoutX() + scale * TileElement.WIDTH);
-				}
-				if (pane.getPrefHeight() < imgV.getLayoutY() + scale * TileElement.HEIGHT) {
-					pane.setPrefHeight(imgV.getLayoutY() + scale * TileElement.HEIGHT);
-				}
 			}
 		}
+		for (Node n : pane.getChildren()) {
+			n.setTranslateX(-minX);
+			n.setTranslateY(-minY);
+		}
+		pane.setPrefSize(maxX - minX, maxY - minY);
 		return pane;
 	}
 
@@ -396,39 +410,51 @@ public class App extends Application {
 			return pane;
 		}
 		int rowHeight = 20, columnWidth = 20;
-		int maxX = 0, maxY = 0;
+		int maxC = 0, maxR = 0;
+		double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE;
+		double maxX = Double.MIN_VALUE, maxY = Double.MIN_VALUE;
 		for (TileElement tileElement : tileElements) {
+			double x = scale * tileElement.c.x * TileElement.WIDTH;
+			double y = scale * tileElement.c.y * TileElement.HEIGHT;
+			if (x < minX) {
+				minX = x;
+			}
+			if (y < minY) {
+				minY = y;
+			}
+			if (maxX < x + scale * TileElement.WIDTH) {
+				maxX = x + scale * TileElement.WIDTH;
+			}
+			if (maxY < y + scale * TileElement.HEIGHT) {
+				maxY = y + scale * TileElement.HEIGHT;
+			}
 			Rectangle r = new Rectangle(scale * TileElement.WIDTH, scale * TileElement.HEIGHT, Color.TRANSPARENT);
 			r.setStroke(Color.BLACK);
 			r.setStrokeType(StrokeType.CENTERED);
-			r.setLayoutX(columnWidth + scale * tileElement.c.x * TileElement.WIDTH);
-			r.setLayoutY(rowHeight + scale * tileElement.c.y * TileElement.HEIGHT);
+			r.setLayoutX(columnWidth + x);
+			r.setLayoutY(rowHeight + y);
 			pane.getChildren().add(r);
-			if (pane.getPrefWidth() < r.getLayoutX() + r.getWidth()) {
-				pane.setPrefWidth(r.getLayoutX() + r.getWidth());
-			}
-			if (pane.getPrefHeight() < r.getLayoutY() + r.getHeight()) {
-				pane.setPrefHeight(r.getLayoutY() + r.getHeight());
-			}
 			for (Image image : tileElement.images) {
 				ImageView imgV = new ImageView(image);
 				imgV.setLayoutX(r.getLayoutX());
 				imgV.setLayoutY(r.getLayoutY());
-				imgV.setTranslateX(0.5 * (scale - 1) * TileElement.WIDTH);
-				imgV.setTranslateY(0.5 * (scale - 1) * TileElement.HEIGHT);
-				imgV.setScaleX(scale);
-				imgV.setScaleY(scale);
+				imgV.setFitWidth(scale * TileElement.WIDTH);
+				imgV.setFitHeight(scale * TileElement.HEIGHT);
 				pane.getChildren().add(0, imgV);
 			}
-			if (tileElement.c.x > maxX) {
-				maxX = tileElement.c.x;
+			if (tileElement.c.x > maxC) {
+				maxC = tileElement.c.x;
 			}
-			if (tileElement.c.y > maxY) {
-				maxY = tileElement.c.y;
+			if (tileElement.c.y > maxR) {
+				maxR = tileElement.c.y;
 			}
 		}
-		Label columnTop[] = new Label[maxX + 1];
-		Label rowLeft[] = new Label[maxY + 1];
+		for (Node n : pane.getChildren()) {
+			n.setTranslateX(-minX);
+			n.setTranslateY(-minY);
+		}
+		Label columnTop[] = new Label[maxC + 1];
+		Label rowLeft[] = new Label[maxR + 1];
 		for (int i = 0; i < columnTop.length; i++) {
 			columnTop[i] = new Label("" + i);
 			columnTop[i].setLayoutX(columnWidth + (i + 0.45) * TileElement.WIDTH);
@@ -440,8 +466,7 @@ public class App extends Application {
 		}
 		pane.getChildren().addAll(columnTop);
 		pane.getChildren().addAll(rowLeft);
-		pane.setPrefWidth(pane.getPrefWidth() + 10);
-		pane.setPrefHeight(pane.getPrefHeight() + 10);
+		pane.setPrefSize(maxX - minX + columnWidth + 10, maxY - minY + rowHeight + 10);
 		return pane;
 	}
 
