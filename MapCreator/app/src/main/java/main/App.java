@@ -104,7 +104,7 @@ public class App extends Application {
 				openImage.setInitialDirectory(openAt.getParentFile());
 			}
 			File imageFile = openImage.showOpenDialog(stage);
-			if (null != imageFile && isPNG(imageFile)) {
+			if (isPNG(imageFile)) {
 				openAt = imageFile;
 				Image image = new Image(imageFile.getAbsolutePath());
 				addImage(image, (int) spinX.getValue(), (int) spinY.getValue());
@@ -311,7 +311,7 @@ public class App extends Application {
 	}
 
 	private static boolean isPNG(File file) {
-		return Files.getFileExtension(file.getAbsolutePath()).equals("png");
+		return null != file && Files.getFileExtension(file.getAbsolutePath()).equals("png");
 	}
 
 	private void addImage(Image img, int x, int y) {
@@ -320,7 +320,7 @@ public class App extends Application {
 			tileElement = new TileElement();
 			tileElement.c = new Coo(x, y);
 			if (!tileList.add(tileElement)) {
-				System.err.println("TileElement " + tileElement + " already has coordinates in tileList.");
+				System.err.println("Exception in adding image to tile element at " + tileElement.c.x + ", " + tileElement.c.y + ".");
 				System.exit(1);
 			}
 		}
