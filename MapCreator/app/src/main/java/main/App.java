@@ -31,8 +31,8 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.StrokeType;
 import javafx.scene.text.Font;
-import javafx.scene.text.TextAlignment;
 import javafx.stage.FileChooser;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javax.imageio.ImageIO;
 
@@ -66,6 +66,7 @@ public class App extends Application {
 	private final Spinner spinPreviewScale = new Spinner<Double>(0, Double.MAX_VALUE, 1);
 	private double previewScale = 1;
 	private final Button loadSession = new Button("Load session [L]"), saveSession = new Button("Save session [W]");
+	private final Button setTileSize = new Button("Set tile size");
 
 	public static void main(String[] args) {
 		launch(args);
@@ -111,7 +112,6 @@ public class App extends Application {
 		addImageBtn.setLayoutX(spinY.getLayoutX() + spinY.getPrefWidth() + padding);
 		addImageBtn.setLayoutY(spinX.getLayoutY());
 		addImageBtn.setPrefWidth(100);
-		addImageBtn.setTextAlignment(TextAlignment.CENTER);
 		addImageBtn.setOnAction(a -> {
 			if (null != openAt && null != openAt.getParentFile()) {
 				openImage.setInitialDirectory(openAt.getParentFile());
@@ -127,7 +127,6 @@ public class App extends Application {
 
 		remove.setLayoutX(addImageBtn.getLayoutX() + addImageBtn.getPrefWidth() + padding);
 		remove.setLayoutY(spinX.getLayoutY());
-		remove.setTextAlignment(TextAlignment.CENTER);
 		remove.setPrefWidth(90);
 		spinPos.setLayoutX(remove.getLayoutX() + remove.getPrefWidth() + padding);
 		spinPos.setLayoutY(spinX.getLayoutY());
@@ -136,11 +135,9 @@ public class App extends Application {
 		spinPos.valueProperty().addListener(l -> checkNull(spinPos, 0));
 		move.setLayoutX(spinPos.getLayoutX() + spinPos.getPrefWidth() + padding);
 		move.setLayoutY(spinX.getLayoutY());
-		move.setTextAlignment(TextAlignment.CENTER);
 		move.setPrefWidth(90);
 		cancel.setLayoutX(move.getLayoutX() + move.getPrefWidth() + padding);
 		cancel.setLayoutY(spinX.getLayoutY());
-		cancel.setTextAlignment(TextAlignment.CENTER);
 		cancel.setPrefWidth(90);
 		remove.setOnAction(a -> {
 			selectTile.images.remove(selectId);
@@ -163,7 +160,6 @@ public class App extends Application {
 
 		toggleGreyBkg.setLayoutX(cancel.getLayoutX() + cancel.getPrefWidth() + padding);
 		toggleGreyBkg.setLayoutY(spinX.getLayoutY());
-		toggleGreyBkg.setTextAlignment(TextAlignment.CENTER);
 		toggleGreyBkg.setPrefWidth(130);
 		Rectangle greyBkg = new Rectangle(displayStack.getPrefWidth(), displayStack.getPrefHeight(), Color.LIGHTGREY);
 		greyBkg.setLayoutX(displayStack.getLayoutX());
@@ -175,7 +171,6 @@ public class App extends Application {
 
 		previewBtn.setLayoutX(toggleGreyBkg.getLayoutX() + toggleGreyBkg.getPrefWidth() + padding);
 		previewBtn.setLayoutY(spinX.getLayoutY());
-		previewBtn.setTextAlignment(TextAlignment.CENTER);
 		previewBtn.setPrefWidth(80);
 		previewBtn.setOnAction(a -> {
 			Pane preview = process(tileList.tileElements, previewScale);
@@ -183,7 +178,6 @@ public class App extends Application {
 		});
 		export.setLayoutX(previewBtn.getLayoutX() + previewBtn.getPrefWidth() + padding);
 		export.setLayoutY(spinX.getLayoutY());
-		export.setTextAlignment(TextAlignment.CENTER);
 		export.setPrefWidth(70);
 		export.setOnAction(a -> {
 			Pane preview = process(tileList.tileElements, 1);
@@ -217,15 +211,12 @@ public class App extends Application {
 		setTemplate.setLayoutX(spinTemplate.getLayoutX() + spinTemplate.getPrefWidth() + padding);
 		setTemplate.setLayoutY(spinTemplate.getLayoutY());
 		setTemplate.setPrefWidth(110);
-		setTemplate.setTextAlignment(TextAlignment.CENTER);
 		insertTemplate.setLayoutX(setTemplate.getLayoutX() + setTemplate.getPrefWidth() + padding);
 		insertTemplate.setLayoutY(setTemplate.getLayoutY());
 		insertTemplate.setPrefWidth(120);
-		insertTemplate.setTextAlignment(TextAlignment.CENTER);
 		appendTemplate.setLayoutX(insertTemplate.getLayoutX() + insertTemplate.getPrefWidth() + padding);
 		appendTemplate.setLayoutY(insertTemplate.getLayoutY());
 		appendTemplate.setPrefWidth(130);
-		appendTemplate.setTextAlignment(TextAlignment.CENTER);
 		setTemplate.setOnAction(a -> {
 			Coo coo = new Coo((int) spinX.getValue(), (int) spinY.getValue());
 			if (tileList.coos.contains(coo)) {
@@ -251,11 +242,9 @@ public class App extends Application {
 		clearTile.setLayoutX(appendTemplate.getLayoutX() + appendTemplate.getPrefWidth() + padding);
 		clearTile.setLayoutY(appendTemplate.getLayoutY());
 		clearTile.setPrefWidth(80);
-		clearTile.setTextAlignment(TextAlignment.CENTER);
 		previewGridBtn.setLayoutX(clearTile.getLayoutX() + clearTile.getPrefWidth() + padding);
 		previewGridBtn.setLayoutY(clearTile.getLayoutY());
 		previewGridBtn.setPrefWidth(110);
-		previewGridBtn.setTextAlignment(TextAlignment.CENTER);
 		spinPreviewScale.setLayoutX(previewGridBtn.getLayoutX() + previewGridBtn.getPrefWidth() + padding);
 		spinPreviewScale.setLayoutY(previewGridBtn.getLayoutY());
 		spinPreviewScale.setPrefWidth(80);
@@ -282,11 +271,9 @@ public class App extends Application {
 
 		loadSession.setLayoutX(spinPreviewScale.getLayoutX() + spinPreviewScale.getPrefWidth() + padding);
 		loadSession.setLayoutY(spinPreviewScale.getLayoutY());
-		loadSession.setTextAlignment(TextAlignment.CENTER);
 		loadSession.setPrefWidth(100);
 		saveSession.setLayoutX(loadSession.getLayoutX() + loadSession.getPrefWidth() + padding);
 		saveSession.setLayoutY(loadSession.getLayoutY());
-		saveSession.setTextAlignment(TextAlignment.CENTER);
 		saveSession.setPrefWidth(110);
 		loadSession.setOnAction(a -> {
 			FileChooser load = new FileChooser();
@@ -308,6 +295,43 @@ public class App extends Application {
 			}
 		});
 		menu.getChildren().addAll(loadSession, saveSession);
+
+		setTileSize.setLayoutX(export.getLayoutX() + export.getPrefWidth() + padding);
+		setTileSize.setLayoutY(spinX.getLayoutY());
+		setTileSize.setPrefWidth(90);
+		setTileSize.setOnAction(a -> {
+			Stage set = new Stage();
+			set.initModality(Modality.WINDOW_MODAL);
+			set.initOwner(stage);
+			set.setTitle("Set tile size");
+			Spinner spinW = new Spinner<Integer>(1, Integer.MAX_VALUE, 64), spinH = new Spinner<Integer>(1, Integer.MAX_VALUE, 64);
+			spinW.setPromptText("Width");
+			spinW.getEditor().setText("");
+			spinW.setLayoutX(75);
+			spinW.setLayoutY(30);
+			spinW.setPrefWidth(100);
+			spinW.setEditable(true);
+			spinH.setPromptText("Height");
+			spinH.getEditor().setText("");
+			spinH.setLayoutX(275);
+			spinH.setLayoutY(30);
+			spinH.setPrefWidth(100);
+			spinH.setEditable(true);
+			Button confirm = new Button("Confirm");
+			confirm.setPrefWidth(100);
+			confirm.setLayoutX(175);
+			confirm.setLayoutY(80);
+			confirm.setOnAction(ac -> {
+				TileElement.WIDTH = (int) spinW.getValue();
+				TileElement.HEIGHT = (int) spinH.getValue();
+				set.close();
+			});
+			Pane pane = new Pane(spinW, spinH, confirm);
+			set.setScene(new Scene(pane, 450, 140));
+			set.show();
+			pane.requestFocus();
+		});
+		menu.getChildren().add(setTileSize);
 
 		spinX.setPromptText("\u2B05 / \u27A1");
 		spinX.getEditor().setText("");
@@ -379,6 +403,8 @@ public class App extends Application {
 			ImageView imgV = new ImageView(tileElement.images.get(i));
 			imgV.setLayoutX(i * (TileElement.WIDTH + 10));
 			imgV.setLayoutY(0.5 * (displayStack.getPrefHeight() - TileElement.HEIGHT));
+			imgV.setFitWidth(64);
+			imgV.setFitHeight(64);
 			int j = i;
 			imgV.setOnMousePressed(m -> imageSelect(tileElement, j));
 			displayStack.getChildren().add(imgV);
@@ -387,6 +413,8 @@ public class App extends Application {
 			ImageView imgV = new ImageView(tileElement.images.get(i));
 			imgV.setLayoutX(0.5 * (displayTile.getPrefWidth() - TileElement.WIDTH));
 			imgV.setLayoutY(0.5 * (displayTile.getPrefHeight() - TileElement.HEIGHT));
+			imgV.setFitWidth(64);
+			imgV.setFitHeight(64);
 			displayTile.getChildren().add(imgV);
 		}
 	}
@@ -633,7 +661,7 @@ public class App extends Application {
 
 		public transient ArrayList<Image> images = new ArrayList<>();
 		public Coo c;
-		public static final int WIDTH = 64, HEIGHT = 64;
+		public static int WIDTH = 64, HEIGHT = 64;
 
 		private void writeObject(ObjectOutputStream out) throws IOException {
 			out.defaultWriteObject();
