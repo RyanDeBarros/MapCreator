@@ -23,6 +23,7 @@ import javafx.scene.control.Spinner;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
@@ -527,6 +528,11 @@ public class App extends Application {
 			previewStage.setTitle("Preview #" + previewCount++);
 			previews.add(previewStage);
 			previewStage.setOnCloseRequest(c -> previews.remove(previewStage));
+			previewStage.addEventHandler(KeyEvent.KEY_PRESSED, key -> {
+				if (key.getCode() == KeyCode.W && key.isControlDown()) {
+					previewStage.close();
+				}
+			});
 			previewStage.show();
 		}
 	}
