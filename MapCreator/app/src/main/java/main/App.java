@@ -14,6 +14,7 @@ import java.util.HashMap;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
+import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -464,14 +465,16 @@ public class App extends Application {
 			r.setLayoutX(columnWidth + x);
 			r.setLayoutY(rowHeight + y);
 			pane.getChildren().add(r);
+			Group g = new Group();
 			for (Image image : tileElement.images) {
 				ImageView imgV = new ImageView(image);
 				imgV.setLayoutX(r.getLayoutX());
 				imgV.setLayoutY(r.getLayoutY());
 				imgV.setFitWidth(scale * TileElement.WIDTH);
 				imgV.setFitHeight(scale * TileElement.HEIGHT);
-				pane.getChildren().add(0, imgV);
+				g.getChildren().add(imgV);
 			}
+			pane.getChildren().add(0, g);
 			if (tileElement.c.x > maxC) {
 				maxC = tileElement.c.x;
 			}
