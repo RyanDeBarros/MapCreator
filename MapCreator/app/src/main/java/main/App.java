@@ -22,6 +22,7 @@ import javafx.scene.control.Spinner;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
@@ -37,31 +38,31 @@ public class App extends Application {
 	private TileList tileList = new TileList();
 	private final Spinner spinX = new Spinner<Integer>(Integer.MIN_VALUE, Integer.MAX_VALUE, 0),
 			spinY = new Spinner<Integer>(Integer.MIN_VALUE, Integer.MAX_VALUE, 0);
-	private final Button open = new Button("Add image");
+	private final Button addImageBtn = new Button("Add image [A]");
 	private final FileChooser openImage = new FileChooser();
 	private File openAt = null;
 	private final Pane displayStack = new Pane();
 	private final Pane displayTile = new Pane();
-	private final Button remove = new Button("Remove"), move = new Button("Move"), cancel = new Button("Cancel");
+	private final Button remove = new Button("Remove [R]"), move = new Button("Move [M]"), cancel = new Button("Cancel [C]");
 	private final Spinner spinPos = new Spinner<Integer>(0, Integer.MAX_VALUE, 0);
 	private TileElement selectTile = null;
 	private int selectId = -1;
-	private final Button toggleGreyBkg = new Button("Toggle grey BKG");
-	private final Button previewBtn = new Button("Preview");
+	private final Button toggleGreyBkg = new Button("Toggle grey BKG [G]");
+	private final Button previewBtn = new Button("Preview [P]");
 	private static int previewCount = 1;
 	private final ArrayList<Stage> previews = new ArrayList<>();
-	private final Button export = new Button("Export");
-	private final Spinner spinTemplate = new Spinner<Integer>(0, Integer.MAX_VALUE, 0);
+	private final Button export = new Button("Export [E]");
+	private final Spinner spinTemplate = new Spinner<Integer>(Integer.MIN_VALUE, Integer.MAX_VALUE, 0);
 	private int templateId = 0;
-	private final Button setTemplate = new Button("Set template"),
-			insertTemplate = new Button("Insert template"),
-			appendTemplate = new Button("Append template");
+	private final Button setTemplate = new Button("Set template [S]"),
+			insertTemplate = new Button("Insert template [I]"),
+			appendTemplate = new Button("Append template [U]");
 	private final HashMap<Integer, ArrayList<Image>> templates = new HashMap<>();
-	private final Button clearTile = new Button("Clear tile");
-	private final Button previewGridBtn = new Button("Preview grid");
+	private final Button clearTile = new Button("Clear tile [K]");
+	private final Button previewGridBtn = new Button("Preview grid [O]");
 	private final Spinner spinPreviewScale = new Spinner<Double>(0, Double.MAX_VALUE, 1);
 	private double previewScale = 1;
-	private final Button loadSession = new Button("Load session"), saveSession = new Button("Save session");
+	private final Button loadSession = new Button("Load session [L]"), saveSession = new Button("Save session [W]");
 
 	public static void main(String[] args) {
 		launch(args);
@@ -73,33 +74,42 @@ public class App extends Application {
 			Platform.exit();
 		});
 		Pane menu = new Pane();
-		menu.setPrefSize(1310, 450);
+		menu.setPrefSize(1310, 550);
 		displayStack.setPrefSize(1100, 300);
 		displayStack.setLayoutX(190);
-		displayStack.setLayoutY(120);
-		Line li = new Line(170, 100, 170, 400);
+		displayStack.setLayoutY(180);
+		Line li = new Line(170, displayStack.getLayoutY() - 20, 170,
+				displayStack.getLayoutY() + displayStack.getPrefHeight() + 20);
 		displayTile.setPrefSize(100, 300);
 		displayTile.setLayoutX(50);
-		displayTile.setLayoutY(120);
+		displayTile.setLayoutY(displayStack.getLayoutY());
 		menu.getChildren().addAll(displayStack, li, displayTile);
 
 		int padding = 20;
 
 		spinX.setLayoutX(padding);
-		spinX.setLayoutY(20);
+		spinX.setLayoutY(30);
 		spinX.setEditable(true);
 		spinX.setPrefWidth(80);
-		spinX.valueProperty().addListener(l -> displayTileStack());
+		spinX.valueProperty().addListener(l -> {
+			if (checkNull(spinX, 0)) {
+				displayTileStack();
+			}
+		});
 		spinY.setLayoutX(spinX.getLayoutX() + spinX.getPrefWidth() + padding);
-		spinY.setLayoutY(20);
+		spinY.setLayoutY(spinX.getLayoutY());
 		spinY.setEditable(true);
 		spinY.setPrefWidth(80);
-		spinY.valueProperty().addListener(l -> displayTileStack());
-		open.setLayoutX(spinY.getLayoutX() + spinY.getPrefWidth() + padding);
-		open.setLayoutY(20);
-		open.setPrefWidth(90);
-		open.setTextAlignment(TextAlignment.CENTER);
-		open.setOnAction(a -> {
+		spinY.valueProperty().addListener(l -> {
+			if (checkNull(spinY, 0)) {
+				displayTileStack();
+			}
+		});
+		addImageBtn.setLayoutX(spinY.getLayoutX() + spinY.getPrefWidth() + padding);
+		addImageBtn.setLayoutY(spinX.getLayoutY());
+		addImageBtn.setPrefWidth(100);
+		addImageBtn.setTextAlignment(TextAlignment.CENTER);
+		addImageBtn.setOnAction(a -> {
 			if (null != openAt && null != openAt.getParentFile()) {
 				openImage.setInitialDirectory(openAt.getParentFile());
 			}
@@ -110,21 +120,23 @@ public class App extends Application {
 				addImage(image, (int) spinX.getValue(), (int) spinY.getValue());
 			}
 		});
-		menu.getChildren().addAll(spinX, spinY, open);
+		menu.getChildren().addAll(spinX, spinY, addImageBtn);
 
-		remove.setLayoutX(open.getLayoutX() + open.getPrefWidth() + padding);
-		remove.setLayoutY(20);
+		remove.setLayoutX(addImageBtn.getLayoutX() + addImageBtn.getPrefWidth() + padding);
+		remove.setLayoutY(spinX.getLayoutY());
 		remove.setTextAlignment(TextAlignment.CENTER);
 		remove.setPrefWidth(90);
 		spinPos.setLayoutX(remove.getLayoutX() + remove.getPrefWidth() + padding);
-		spinPos.setLayoutY(20);
+		spinPos.setLayoutY(spinX.getLayoutY());
 		spinPos.setPrefWidth(80);
+		spinPos.setEditable(true);
+		spinPos.valueProperty().addListener(l -> checkNull(spinPos, 0));
 		move.setLayoutX(spinPos.getLayoutX() + spinPos.getPrefWidth() + padding);
-		move.setLayoutY(20);
+		move.setLayoutY(spinX.getLayoutY());
 		move.setTextAlignment(TextAlignment.CENTER);
 		move.setPrefWidth(90);
 		cancel.setLayoutX(move.getLayoutX() + move.getPrefWidth() + padding);
-		cancel.setLayoutY(20);
+		cancel.setLayoutY(spinX.getLayoutY());
 		cancel.setTextAlignment(TextAlignment.CENTER);
 		cancel.setPrefWidth(90);
 		remove.setOnAction(a -> {
@@ -143,13 +155,13 @@ public class App extends Application {
 			selectTile.images.add(to, img);
 			displayTileStack();
 		});
-		cancel.setOnMousePressed(m -> displayTileStack());
+		cancel.setOnAction(a -> displayTileStack());
 		menu.getChildren().addAll(remove, spinPos, move, cancel);
 
 		toggleGreyBkg.setLayoutX(cancel.getLayoutX() + cancel.getPrefWidth() + padding);
-		toggleGreyBkg.setLayoutY(20);
+		toggleGreyBkg.setLayoutY(spinX.getLayoutY());
 		toggleGreyBkg.setTextAlignment(TextAlignment.CENTER);
-		toggleGreyBkg.setPrefWidth(120);
+		toggleGreyBkg.setPrefWidth(130);
 		Rectangle greyBkg = new Rectangle(displayStack.getPrefWidth(), displayStack.getPrefHeight(), Color.LIGHTGREY);
 		greyBkg.setLayoutX(displayStack.getLayoutX());
 		greyBkg.setLayoutY(displayStack.getLayoutY());
@@ -159,7 +171,7 @@ public class App extends Application {
 		menu.getChildren().add(0, greyBkg);
 
 		previewBtn.setLayoutX(toggleGreyBkg.getLayoutX() + toggleGreyBkg.getPrefWidth() + padding);
-		previewBtn.setLayoutY(20);
+		previewBtn.setLayoutY(spinX.getLayoutY());
 		previewBtn.setTextAlignment(TextAlignment.CENTER);
 		previewBtn.setPrefWidth(80);
 		previewBtn.setOnAction(a -> {
@@ -167,7 +179,7 @@ public class App extends Application {
 			displayPreview(preview);
 		});
 		export.setLayoutX(previewBtn.getLayoutX() + previewBtn.getPrefWidth() + padding);
-		export.setLayoutY(20);
+		export.setLayoutY(spinX.getLayoutY());
 		export.setTextAlignment(TextAlignment.CENTER);
 		export.setPrefWidth(70);
 		export.setOnAction(a -> {
@@ -191,23 +203,25 @@ public class App extends Application {
 		menu.getChildren().addAll(previewBtn, export);
 
 		spinTemplate.setLayoutX(padding);
-		spinTemplate.setLayoutY(60);
+		spinTemplate.setLayoutY(80);
 		spinTemplate.setPrefWidth(80);
 		spinTemplate.setEditable(true);
 		spinTemplate.valueProperty().addListener(l -> {
-			templateId = (int) spinTemplate.getValue();
+			if (checkNull(spinTemplate, 0)) {
+				templateId = (int) spinTemplate.getValue();
+			}
 		});
 		setTemplate.setLayoutX(spinTemplate.getLayoutX() + spinTemplate.getPrefWidth() + padding);
 		setTemplate.setLayoutY(spinTemplate.getLayoutY());
-		setTemplate.setPrefWidth(90);
+		setTemplate.setPrefWidth(110);
 		setTemplate.setTextAlignment(TextAlignment.CENTER);
 		insertTemplate.setLayoutX(setTemplate.getLayoutX() + setTemplate.getPrefWidth() + padding);
 		insertTemplate.setLayoutY(setTemplate.getLayoutY());
-		insertTemplate.setPrefWidth(100);
+		insertTemplate.setPrefWidth(120);
 		insertTemplate.setTextAlignment(TextAlignment.CENTER);
 		appendTemplate.setLayoutX(insertTemplate.getLayoutX() + insertTemplate.getPrefWidth() + padding);
 		appendTemplate.setLayoutY(insertTemplate.getLayoutY());
-		appendTemplate.setPrefWidth(110);
+		appendTemplate.setPrefWidth(130);
 		appendTemplate.setTextAlignment(TextAlignment.CENTER);
 		setTemplate.setOnAction(a -> {
 			Coo coo = new Coo((int) spinX.getValue(), (int) spinY.getValue());
@@ -237,7 +251,7 @@ public class App extends Application {
 		clearTile.setTextAlignment(TextAlignment.CENTER);
 		previewGridBtn.setLayoutX(clearTile.getLayoutX() + clearTile.getPrefWidth() + padding);
 		previewGridBtn.setLayoutY(clearTile.getLayoutY());
-		previewGridBtn.setPrefWidth(90);
+		previewGridBtn.setPrefWidth(110);
 		previewGridBtn.setTextAlignment(TextAlignment.CENTER);
 		spinPreviewScale.setLayoutX(previewGridBtn.getLayoutX() + previewGridBtn.getPrefWidth() + padding);
 		spinPreviewScale.setLayoutY(previewGridBtn.getLayoutY());
@@ -257,7 +271,9 @@ public class App extends Application {
 			displayPreview(preview);
 		});
 		spinPreviewScale.valueProperty().addListener(l -> {
-			previewScale = (double) spinPreviewScale.getValue();
+			if (checkNull(spinPreviewScale, 1d)) {
+				previewScale = (double) spinPreviewScale.getValue();
+			}
 		});
 		menu.getChildren().addAll(clearTile, previewGridBtn, spinPreviewScale);
 
@@ -268,7 +284,7 @@ public class App extends Application {
 		saveSession.setLayoutX(loadSession.getLayoutX() + loadSession.getPrefWidth() + padding);
 		saveSession.setLayoutY(loadSession.getLayoutY());
 		saveSession.setTextAlignment(TextAlignment.CENTER);
-		saveSession.setPrefWidth(100);
+		saveSession.setPrefWidth(110);
 		loadSession.setOnAction(a -> {
 			FileChooser load = new FileChooser();
 			load.setTitle("Load session (.ser file)");
@@ -290,9 +306,22 @@ public class App extends Application {
 		});
 		menu.getChildren().addAll(loadSession, saveSession);
 
+		spinX.setPromptText("\u2B05 / \u27A1");
+		spinX.getEditor().setText("");
+		spinY.setPromptText("\u2B06 / \u2B07");
+		spinY.getEditor().setText("");
+		spinPos.setPromptText("< / >");
+		spinPos.getEditor().setText("");
+		spinTemplate.setPromptText("[ / ]");
+		spinTemplate.getEditor().setText("");
+		spinPreviewScale.setPromptText("- / +");
+		spinPreviewScale.getEditor().setText("");
 		stage.setScene(new Scene(menu));
 		stage.setTitle("Map Creator");
 		stage.getIcons().add(new Image(getClass().getResource("/mapIcon.png").toExternalForm()));
+		menu.setOnMouseClicked(m -> menu.requestFocus());
+		menu.requestFocus();
+		setupKeyBindings(stage);
 		stage.show();
 		displayTileStack();
 	}
@@ -499,6 +528,77 @@ public class App extends Application {
 		}
 	}
 
+	private static <T extends Number> boolean checkNull(Spinner<T> spin, T def) {
+		if (null == spin.getValue()) {
+			spin.getValueFactory().setValue(def);
+//			spin.getEditor().setText("" + def);
+			return false;
+		}
+		return true;
+	}
+
+	private void setupKeyBindings(Stage stage) {
+		stage.addEventHandler(KeyEvent.KEY_PRESSED, key -> {
+			switch (key.getCode()) {
+				case LEFT -> spinX.getValueFactory().decrement(1);
+				case RIGHT -> spinX.getValueFactory().increment(1);
+				case UP -> spinY.getValueFactory().decrement(1);
+				case DOWN -> spinY.getValueFactory().increment(1);
+				case A -> addImageBtn.fire();
+				case R -> {
+					if (!remove.isDisabled()) {
+						remove.fire();
+					}
+				}
+				case COMMA, LESS -> {
+					if (!spinPos.isDisabled()) {
+						spinPos.getValueFactory().decrement(1);
+					}
+				}
+				case PERIOD, GREATER -> {
+					if (!spinPos.isDisabled()) {
+						spinPos.getValueFactory().increment(1);
+					}
+				}
+				case M -> {
+					if (!move.isDisabled()) {
+						move.fire();
+					}
+				}
+				case C -> {
+					if (!cancel.isDisabled()) {
+						cancel.fire();
+					}
+				}
+				case G -> toggleGreyBkg.fire();
+				case P -> previewBtn.fire();
+				case E -> export.fire();
+				case O -> previewGridBtn.fire();
+				case S -> setTemplate.fire();
+				case I -> insertTemplate.fire();
+				case U -> appendTemplate.fire();
+				case K -> clearTile.fire();
+				case PLUS, ADD, EQUALS -> spinPreviewScale.getValueFactory().setValue((double) spinPreviewScale.getValue() * 2);
+				case MINUS -> spinPreviewScale.getValueFactory().setValue((double) spinPreviewScale.getValue() * 0.5);
+				case OPEN_BRACKET -> spinTemplate.getValueFactory().decrement(1);
+				case CLOSE_BRACKET -> spinTemplate.getValueFactory().increment(1);
+				case DIGIT0, SOFTKEY_0, NUMPAD0 -> spinTemplate.getValueFactory().setValue(0);
+				case DIGIT1, SOFTKEY_1, NUMPAD1 -> spinTemplate.getValueFactory().setValue(1);
+				case DIGIT2, SOFTKEY_2, NUMPAD2 -> spinTemplate.getValueFactory().setValue(2);
+				case DIGIT3, SOFTKEY_3, NUMPAD3 -> spinTemplate.getValueFactory().setValue(3);
+				case DIGIT4, SOFTKEY_4, NUMPAD4 -> spinTemplate.getValueFactory().setValue(4);
+				case DIGIT5, SOFTKEY_5, NUMPAD5 -> spinTemplate.getValueFactory().setValue(5);
+				case DIGIT6, SOFTKEY_6, NUMPAD6 -> spinTemplate.getValueFactory().setValue(6);
+				case DIGIT7, SOFTKEY_7, NUMPAD7 -> spinTemplate.getValueFactory().setValue(7);
+				case DIGIT8, SOFTKEY_8, NUMPAD8 -> spinTemplate.getValueFactory().setValue(8);
+				case DIGIT9, SOFTKEY_9, NUMPAD9 -> spinTemplate.getValueFactory().setValue(9);
+				case L -> loadSession.fire();
+				case W -> saveSession.fire();
+			}
+		});
+	}
+
+	@SuppressWarnings("EqualsAndHashcode")
 	public static class Coo implements Serializable {
 
 		public final int x, y;
