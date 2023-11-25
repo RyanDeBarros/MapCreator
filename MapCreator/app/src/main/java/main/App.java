@@ -410,7 +410,8 @@ public class App extends Application {
 			return pane;
 		}
 		int rowHeight = 20, columnWidth = 20;
-		int maxC = 0, maxR = 0;
+		int maxC = Integer.MIN_VALUE, maxR = Integer.MIN_VALUE;
+		int minC = Integer.MAX_VALUE, minR = Integer.MAX_VALUE;
 		double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE;
 		double maxX = Double.MIN_VALUE, maxY = Double.MIN_VALUE;
 		for (TileElement tileElement : tileElements) {
@@ -445,22 +446,28 @@ public class App extends Application {
 			if (tileElement.c.x > maxC) {
 				maxC = tileElement.c.x;
 			}
+			if (tileElement.c.x < minC) {
+				minC = tileElement.c.x;
+			}
 			if (tileElement.c.y > maxR) {
 				maxR = tileElement.c.y;
+			}
+			if (tileElement.c.y < minR) {
+				minR = tileElement.c.y;
 			}
 		}
 		for (Node n : pane.getChildren()) {
 			n.setTranslateX(-minX);
 			n.setTranslateY(-minY);
 		}
-		Label columnTop[] = new Label[maxC + 1];
-		Label rowLeft[] = new Label[maxR + 1];
+		Label columnTop[] = new Label[maxC - minC + 1];
+		Label rowLeft[] = new Label[maxR - minR + 1];
 		for (int i = 0; i < columnTop.length; i++) {
-			columnTop[i] = new Label("" + i);
+			columnTop[i] = new Label("" + (i + minC));
 			columnTop[i].setLayoutX(columnWidth + (i + 0.45) * TileElement.WIDTH);
 		}
 		for (int i = 0; i < rowLeft.length; i++) {
-			rowLeft[i] = new Label("" + i);
+			rowLeft[i] = new Label("" + (i + minR));
 			rowLeft[i].setLayoutY(rowHeight + (i + 0.45) * TileElement.HEIGHT);
 			rowLeft[i].setLayoutX(columnWidth * 0.35);
 		}
