@@ -30,6 +30,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.StrokeType;
+import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -435,7 +436,7 @@ public class App extends Application {
 		return pane;
 	}
 
-	private static Pane gridProcess(ArrayList<TileElement> tileElements, double scale) {
+	private Pane gridProcess(ArrayList<TileElement> tileElements, double scale) {
 		Pane pane = new Pane();
 		if (tileElements.isEmpty()) {
 			return pane;
@@ -463,6 +464,7 @@ public class App extends Application {
 			Rectangle r = new Rectangle(scale * TileElement.WIDTH, scale * TileElement.HEIGHT, Color.TRANSPARENT);
 			r.setStroke(Color.BLACK);
 			r.setStrokeType(StrokeType.CENTERED);
+			r.setStrokeWidth((double) spinPreviewScale.getValue());
 			r.setLayoutX(columnWidth + x);
 			r.setLayoutY(rowHeight + y);
 			pane.getChildren().add(r);
@@ -495,14 +497,17 @@ public class App extends Application {
 		}
 		Label columnTop[] = new Label[maxC - minC + 1];
 		Label rowLeft[] = new Label[maxR - minR + 1];
+		Font size = Font.font(12 + 1.5 * Math.log((double) spinPreviewScale.getValue()));
 		for (int i = 0; i < columnTop.length; i++) {
 			columnTop[i] = new Label("" + (i + minC));
-			columnTop[i].setLayoutX(columnWidth + (i + 0.45) * TileElement.WIDTH);
+			columnTop[i].setLayoutX(columnWidth - 3 + (double) spinPreviewScale.getValue() * (i + 0.5) * TileElement.WIDTH);
+			columnTop[i].setFont(size);
 		}
 		for (int i = 0; i < rowLeft.length; i++) {
 			rowLeft[i] = new Label("" + (i + minR));
-			rowLeft[i].setLayoutY(rowHeight + (i + 0.45) * TileElement.HEIGHT);
+			rowLeft[i].setLayoutY(rowHeight - 5 + (double) spinPreviewScale.getValue() * (i + 0.5) * TileElement.HEIGHT);
 			rowLeft[i].setLayoutX(columnWidth * 0.35);
+			rowLeft[i].setFont(size);
 		}
 		pane.getChildren().addAll(columnTop);
 		pane.getChildren().addAll(rowLeft);
