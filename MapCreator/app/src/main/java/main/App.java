@@ -660,6 +660,7 @@ public class App extends Application {
 
 	public static class TileElement implements Serializable {
 
+		private static final long serialVersionUID = 6516672742498178610L;
 		public transient ArrayList<Image> images = new ArrayList<>();
 		public Coo c;
 		public static int WIDTH = 64, HEIGHT = 64;
