@@ -170,7 +170,7 @@ public class App extends Application {
 		previewBtn.setPrefWidth(80);
 		previewBtn.setOnAction(a -> {
 			Pane preview = process(tileList.tileElements, previewScale);
-			displayPreview(preview);
+			displayPreview(stage, preview);
 		});
 		export.setLayoutX(previewBtn.getLayoutX() + previewBtn.getPrefWidth() + padding);
 		export.setLayoutY(spinX.getLayoutY());
@@ -256,7 +256,7 @@ public class App extends Application {
 		});
 		previewGridBtn.setOnAction(a -> {
 			Pane preview = gridProcess(tileList.tileElements, previewScale);
-			displayPreview(preview);
+			displayPreview(stage, preview);
 		});
 		spinPreviewScale.valueProperty().addListener(l -> {
 			if (checkNull(spinPreviewScale, 1d)) {
@@ -550,12 +550,13 @@ public class App extends Application {
 		}
 	}
 
-	private void displayPreview(Pane preview) {
+	private void displayPreview(Stage stage, Pane preview) {
 		if (!preview.getChildren().isEmpty()) {
 			Stage previewStage = new Stage();
 			Pane root = new Pane();
 			root.getChildren().add(preview);
 			previewStage.setScene(new Scene(root));
+			previewStage.getIcons().addAll(stage.getIcons());
 			previewStage.setTitle("Preview #" + previewCount++);
 			previews.add(previewStage);
 			previewStage.setOnCloseRequest(c -> previews.remove(previewStage));
