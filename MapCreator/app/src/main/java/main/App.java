@@ -277,8 +277,10 @@ public class App extends Application {
 			File loadFile = load.showOpenDialog(stage);
 			if (null != loadFile) {
 				TileList loadList = Loader.load(loadFile);
-				tileList = loadList;
-				displayTileStack();
+				if (null != loadList) {
+					tileList = loadList;
+					displayTileStack();
+				}
 			}
 		});
 		saveSession.setOnAction(a -> {

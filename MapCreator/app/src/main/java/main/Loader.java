@@ -19,6 +19,8 @@ public class Loader {
 			try (FileInputStream is = new FileInputStream(file); ObjectInputStream in = new ObjectInputStream(is);) {
 				return (TileList) in.readObject();
 			}
+		} catch (java.io.StreamCorruptedException e) {
+			return null;
 		} catch (IOException | ClassNotFoundException e) {
 			e.printStackTrace();
 			System.exit(2);
