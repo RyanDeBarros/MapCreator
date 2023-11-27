@@ -12,7 +12,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.Group;
 import javafx.scene.Node;
@@ -74,9 +73,6 @@ public class App extends Application {
 
 	@Override
 	public void start(Stage stage) {
-		stage.setOnCloseRequest(c -> {
-			Platform.exit();
-		});
 		Pane menu = new Pane();
 		menu.setPrefSize(1310, 550);
 		displayStack.setPrefSize(1100, 300);
@@ -564,6 +560,11 @@ public class App extends Application {
 			previewStage.addEventHandler(KeyEvent.KEY_PRESSED, key -> {
 				if (key.getCode() == KeyCode.W && key.isControlDown()) {
 					previewStage.close();
+					previews.remove(previewStage);
+					if (key.isShiftDown()) {
+						previews.forEach(p -> p.close());
+						previews.clear();
+					}
 				}
 			});
 			previewStage.show();
